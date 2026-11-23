@@ -1,4 +1,8 @@
-import { NETWORK_TARIFFS, NetworkTariffRule } from '../data/networkTariffs';
+import {
+  NETWORK_TARIFFS,
+  NetworkTariffRule,
+  SubscriptionPlan,
+} from '../data/networkTariffs';
 import { ChargingStation, PriceTier, ResolvedPrice, VehicleProfile } from '../types/charging';
 
 export function isTruthyIrve(val: string | boolean | number | null | undefined): boolean {
@@ -441,5 +445,58 @@ export function estimateTotalCostWithDetour(
     detourMinutes,
     totalEffectiveEur,
     effectivePricePerKwh,
+  };
+}
+
+export interface SubscriptionBreakeven {
+  isProfitable: boolean;
+  baselinePublicPerKwh: number;
+  savingsPerKwh: number;
+  breakEvenKwh: number | null;
+  breakEvenCharges: number | null;
+  breakEvenKm: number | null;
+  savingsPerChargeEur: number;
+}
+
+export function computeSubscriptionBreakeven(
+  plan: SubscriptionPlan,
+  publicPricePerKwh: number | null,
+  vehicle: VehicleProfile
+): SubscriptionBreakeven {
+  const baselinePublicPerKwh = publicPricePerKwh ?? plan.referencePublicPerKwh;
+  const savingsPerKwh =
+    Math.round((baselinePublicPerKwh - plan.pricePerKwh) * 1000) / 1000;
+
+  if (savingsPerKwh <= 0) {
+    return {
+      isProfitable: false,
+      baselinePublicPerKwh,
+      savingsPerKwh: 0,
+      breakEvenKwh: null,
+      breakEvenCharges: null,
+      breakEvenKm: null,
+      savingsPerChargeEur: 0,
+    };
+  }
+
+  const breakEvenKwh = Math.ceil(plan.monthlyPriceEur / savingsPerKwh);
+  const socDelta = Math.max(5, vehicle.targetSoc - vehicle.startSoc);
+  const sessionKwh = Math.max(1, (vehicle.batteryKwh * socDelta) / 100);
+  const breakEvenCharges = Math.round((breakEvenKwh / sessionKwh) * 10) / 10;
+  const breakEvenKm =
+    vehicle.consumptionKwhPer100 > 0
+      ? Math.round((breakEvenKwh / vehicle.consumptionKwhPer100) * 100)
+      : null;
+  const savingsPerChargeEur =
+    Math.round(sessionKwh * savingsPerKwh * 100) / 100;
+
+  return {
+    isProfitable: true,
+    baselinePublicPerKwh,
+    savingsPerKwh,
+    breakEvenKwh,
+    breakEvenCharges,
+    breakEvenKm,
+    savingsPerChargeEur,
   };
 }

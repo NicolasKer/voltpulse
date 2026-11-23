@@ -1,23 +1,31 @@
 import React, { useMemo, useState } from 'react';
-import { BatteryCharging, Car, Coins, Gauge, Sparkles, TrendingDown } from 'lucide-react';
-import { EV_PRESETS } from '../data/networkTariffs';
+import { BatteryCharging, Car, Coins, Gauge, Sparkles, Ticket, TrendingDown } from 'lucide-react';
+import { EV_PRESETS, SUBSCRIPTION_PLANS } from '../data/networkTariffs';
 import { ChargingStation, VehicleProfile } from '../types/charging';
-import { estimateChargeSession, formatPriceKwh } from '../utils/tariffParser';
+import {
+  computeSubscriptionBreakeven,
+  estimateChargeSession,
+  formatPriceKwh,
+} from '../utils/tariffParser';
 
 interface SimulatorViewProps {
   vehicle: VehicleProfile;
   stations: ChargingStation[];
   locationLabel: string;
+  activeSubscriptions: string[];
   onUpdateVehicle: (next: VehicleProfile) => void;
   onSelectStation: (station: ChargingStation) => void;
+  onToggleSubscription: (planId: string) => void;
 }
 
 export const SimulatorView: React.FC<SimulatorViewProps> = ({
   vehicle,
   stations,
   locationLabel,
+  activeSubscriptions,
   onUpdateVehicle,
   onSelectStation,
+  onToggleSubscription,
 }) => {
   const [customTariff, setCustomTariff] = useState<string>('0.45');
 
@@ -408,6 +416,72 @@ export const SimulatorView: React.FC<SimulatorViewProps> = ({
               }
             />
           </div>
+        </div>
+      </section>
+
+      {/* Subscription Break-Even Comparison */}
+      <section className="sim-section-card">
+        <div className="section-heading">
+          <Ticket size={18} style={{ color: 'var(--accent-purple)' }} aria-hidden="true" />
+          <h2>Rentabilité des abonnements</h2>
+        </div>
+        <p className="tier-meta" style={{ margin: '0 0 0.7rem' }}>
+          Pour des recharges de <strong>+{baseEst.energyKwh} kWh</strong> ({vehicle.startSoc}% →{' '}
+          {vehicle.targetSoc}%), seuil mensuel pour amortir l’abo :
+        </p>
+
+        <div className="sim-subs-list">
+          {SUBSCRIPTION_PLANS.map((plan) => ({
+            plan,
+            be: computeSubscriptionBreakeven(plan, null, vehicle),
+          }))
+            .sort((a, b) => (a.be.breakEvenKwh ?? 9999) - (b.be.breakEvenKwh ?? 9999))
+            .map(({ plan, be }) => {
+              const isActive = activeSubscriptions.includes(plan.id);
+              return (
+                <div
+                  key={plan.id}
+                  className={`sub-detail-row${isActive ? ' is-active' : ''}`}
+                >
+                  <div className="sub-detail-head">
+                    <div>
+                      <strong>{plan.name}</strong>
+                      <span className="sub-monthly-tag"> · {plan.monthlyLabel}</span>
+                    </div>
+                    <button
+                      type="button"
+                      className={`sub-detail-toggle${isActive ? ' active' : ''}`}
+                      aria-pressed={isActive}
+                      onClick={() => onToggleSubscription(plan.id)}
+                    >
+                      {isActive ? 'Actif ✓' : 'Activer'}
+                    </button>
+                  </div>
+                  <div className="sub-detail-rates">
+                    <strong>{formatPriceKwh(plan.pricePerKwh, true)}</strong> vs{' '}
+                    <span>{formatPriceKwh(be.baselinePublicPerKwh, true)}</span> sans abo
+                    {be.isProfitable && (
+                      <strong className="accent-emerald-txt">
+                        {' '}
+                        (-
+                        {be.savingsPerChargeEur.toLocaleString('fr-FR', {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}{' '}
+                        €/rech.)
+                      </strong>
+                    )}
+                  </div>
+                  {be.isProfitable && (
+                    <div className="sub-detail-breakeven">
+                      Rentable dès <strong>{be.breakEvenKwh} kWh/mois</strong> (~
+                      {be.breakEvenCharges} rech.
+                      {be.breakEvenKm ? ` · ~${be.breakEvenKm} km` : ''})
+                    </div>
+                  )}
+                </div>
+              );
+            })}
         </div>
       </section>
     </div>

@@ -70,6 +70,10 @@ export interface ResolvedPrice {
   detailNote?: string;
   rawTariff?: string | null;
   tariffUrl?: string | null;
+  subscriptionPlanId?: string;
+  subscriptionMonthlyEur?: number;
+  subscriptionMonthlyLabel?: string;
+  publicPricePerKwh?: number | null;
 }
 
 export interface PowerPriceTier {

@@ -2,7 +2,7 @@ import React, { useRef, useState } from 'react';
 import { Download, Info, Smartphone, Ticket, Trash2, Upload } from 'lucide-react';
 import { SUBSCRIPTION_PLANS } from '../data/networkTariffs';
 import { PowerMode, SearchFilters, VehicleProfile } from '../types/charging';
-import { formatPriceKwh } from '../utils/tariffParser';
+import { computeSubscriptionBreakeven, formatPriceKwh } from '../utils/tariffParser';
 import { ModalDialog } from './ModalDialog';
 
 interface SettingsModalProps {
@@ -136,6 +136,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         <div className="subs-grid">
           {SUBSCRIPTION_PLANS.map((plan) => {
             const checked = activeSubscriptions.includes(plan.id);
+            const be = computeSubscriptionBreakeven(plan, null, vehicle);
             return (
               <label
                 key={plan.id}
@@ -153,6 +154,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   <small>
                     {formatPriceKwh(plan.pricePerKwh, true)} · {plan.monthlyLabel}
                   </small>
+                  {be.isProfitable && (
+                    <small className="sub-plan-breakeven">
+                      Rentable ≥ {be.breakEvenKwh} kWh/mois (~{be.breakEvenCharges} rech.)
+                    </small>
+                  )}
                 </span>
               </label>
             );

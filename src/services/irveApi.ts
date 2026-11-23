@@ -359,6 +359,10 @@ export function applyPricingLayers(
           sourceLabel: `Abo ${sub.name.split(' ')[0]}`,
           tier: getPriceTier(sub.pricePerKwh),
           detailNote: `${sub.note} (abonnement actif)`,
+          subscriptionPlanId: sub.id,
+          subscriptionMonthlyEur: sub.monthlyPriceEur,
+          subscriptionMonthlyLabel: sub.monthlyLabel,
+          publicPricePerKwh: basePrice.pricePerKwh ?? sub.referencePublicPerKwh,
         },
       };
     }

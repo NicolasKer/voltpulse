@@ -6,10 +6,13 @@ import {
   Heart,
   MapPin,
   Navigation,
+  Ticket,
   Zap,
 } from 'lucide-react';
+import { findAvailableSubscriptionsForStation } from '../data/networkTariffs';
 import { ChargingStation, SortBy, VehicleProfile } from '../types/charging';
 import {
+  computeSubscriptionBreakeven,
   estimateChargeSession,
   estimateTotalCostWithDetour,
   formatPriceKwh,
@@ -44,6 +47,35 @@ export const StationCard: React.FC<StationCardProps> = ({
   );
   const detourEst =
     sortBy === 'total_cost' ? estimateTotalCostWithDetour(station, vehicle) : null;
+
+  const availablePlans = findAvailableSubscriptionsForStation(
+    station.brand,
+    station.operator
+  );
+  const activeSubPlan =
+    resolvedPrice.source === 'subscription'
+      ? availablePlans.find((p) => p.id === resolvedPrice.subscriptionPlanId) ??
+        availablePlans[0] ??
+        null
+      : null;
+  const activeBreakeven = activeSubPlan
+    ? computeSubscriptionBreakeven(
+        activeSubPlan,
+        resolvedPrice.publicPricePerKwh ?? null,
+        vehicle
+      )
+    : null;
+  const hintPlan =
+    resolvedPrice.source !== 'subscription' && resolvedPrice.source !== 'user'
+      ? availablePlans.find(
+          (p) =>
+            resolvedPrice.pricePerKwh === null ||
+            p.pricePerKwh < resolvedPrice.pricePerKwh
+        ) ?? null
+      : null;
+  const hintBreakeven = hintPlan
+    ? computeSubscriptionBreakeven(hintPlan, resolvedPrice.pricePerKwh, vehicle)
+    : null;
 
   const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${station.lat},${station.lon}`;
 
@@ -83,6 +115,12 @@ export const StationCard: React.FC<StationCardProps> = ({
                 : 'Inconnu'}
             </span>
           </div>
+          {resolvedPrice.source === 'subscription' &&
+            resolvedPrice.subscriptionMonthlyLabel && (
+              <div className="price-sub-fee">
+                Abo {resolvedPrice.subscriptionMonthlyLabel.replace('/mois', '/m')}
+              </div>
+            )}
         </div>
 
         <div className="station-info-col">
@@ -157,6 +195,18 @@ export const StationCard: React.FC<StationCardProps> = ({
             {station.is247 && (
               <span className="spec-chip">
                 <Clock size={11} aria-hidden="true" /> 24/7
+              </span>
+            )}
+            {activeBreakeven && activeBreakeven.isProfitable && (
+              <span className="spec-chip sub-chip">
+                <Ticket size={11} aria-hidden="true" /> Rentable ≥{' '}
+                {activeBreakeven.breakEvenKwh} kWh (~{activeBreakeven.breakEvenCharges} rech.)
+              </span>
+            )}
+            {hintPlan && hintBreakeven && hintBreakeven.isProfitable && (
+              <span className="spec-chip sub-hint-chip">
+                <Ticket size={11} aria-hidden="true" /> Abo {formatPriceKwh(hintPlan.pricePerKwh)} (
+                {hintPlan.monthlyLabel.replace('/mois', '/m')}) · ≥ {hintBreakeven.breakEvenKwh} kWh
               </span>
             )}
           </div>

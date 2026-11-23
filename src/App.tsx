@@ -1489,8 +1489,10 @@ export const App: React.FC = () => {
             vehicle={vehicle}
             stations={visibleStations}
             locationLabel={location.label}
+            activeSubscriptions={activeSubscriptions}
             onUpdateVehicle={updateVehicle}
             onSelectStation={(st) => setSelectedStationId(st.id)}
+            onToggleSubscription={handleToggleSubscription}
           />
         )}
 
@@ -1583,9 +1585,11 @@ export const App: React.FC = () => {
         vehicle={vehicle}
         areaAveragePrice={sectorStats.average}
         existingOverride={selectedStation ? overrides[selectedStation.id] : undefined}
+        activeSubscriptions={activeSubscriptions}
         isFavorite={selectedStation ? favoriteIds.has(selectedStation.id) : false}
         onClose={() => setSelectedStationId(null)}
         onRefreshAvailability={handleRefreshStationAvailability}
+        onToggleSubscription={handleToggleSubscription}
         onSaveOverride={handleSaveOverride}
         onDeleteOverride={handleDeleteOverride}
         onToggleFavorite={handleToggleFavorite}

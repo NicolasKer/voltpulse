@@ -304,8 +304,10 @@ export const NETWORK_TARIFFS: NetworkTariffRule[] = [
 export interface SubscriptionPlan {
   id: string;
   name: string;
+  monthlyPriceEur: number;
   monthlyLabel: string;
   pricePerKwh: number;
+  referencePublicPerKwh: number;
   patterns: string[];
   note: string;
 }
@@ -314,50 +316,62 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
   {
     id: 'electra',
     name: 'Electra+ Boost',
+    monthlyPriceEur: 19.99,
     monthlyLabel: '19,99 €/mois',
     pricePerKwh: 0.29,
+    referencePublicPerKwh: 0.54,
     patterns: ['electra'],
-    note: 'Tarif abonné Electra+ Boost (0,29 €/kWh)',
+    note: 'Tarif abonné Electra+ Boost (0,29 €/kWh · abo 19,99 €/mois)',
   },
   {
     id: 'tesla',
     name: 'Tesla Supercharging',
+    monthlyPriceEur: 9.99,
     monthlyLabel: '9,99 €/mois',
     pricePerKwh: 0.33,
+    referencePublicPerKwh: 0.45,
     patterns: ['tesla'],
-    note: 'Tarif membre Tesla (~0,29–0,39 €/kWh selon heure)',
+    note: 'Tarif membre Tesla (~0,29–0,39 €/kWh · abo 9,99 €/mois)',
   },
   {
     id: 'ionity',
     name: 'IONITY Passport Power',
+    monthlyPriceEur: 11.99,
     monthlyLabel: '11,99 €/mois',
     pricePerKwh: 0.33,
+    referencePublicPerKwh: 0.59,
     patterns: ['ionity'],
-    note: 'Tarif abonné IONITY Passport Power (0,33 €/kWh)',
+    note: 'Tarif abonné IONITY Passport Power (0,33 €/kWh · abo 11,99 €/mois)',
   },
   {
     id: 'engie',
     name: 'ENGIE Vianeo Max',
+    monthlyPriceEur: 9.99,
     monthlyLabel: '9,99 €/mois',
     pricePerKwh: 0.33,
+    referencePublicPerKwh: 0.62,
     patterns: ['engie', 'vianeo'],
-    note: 'Tarif unique abonné ENGIE Vianeo Max (0,33 €/kWh)',
+    note: 'Tarif unique abonné ENGIE Vianeo Max (0,33 €/kWh · abo 9,99 €/mois)',
   },
   {
     id: 'mobilize',
     name: 'Mobilize Pass Intense',
+    monthlyPriceEur: 4.99,
     monthlyLabel: '4,99 €/mois',
     pricePerKwh: 0.39,
+    referencePublicPerKwh: 0.59,
     patterns: ['mobilize', 'ionity'],
-    note: 'Tarif partenaire Mobilize Intense (~0,39 €/kWh)',
+    note: 'Tarif partenaire Mobilize Intense (~0,39 €/kWh · abo 4,99 €/mois)',
   },
   {
     id: 'fastned',
     name: 'Fastned Gold',
+    monthlyPriceEur: 11.99,
     monthlyLabel: '11,99 €/mois',
     pricePerKwh: 0.41,
+    referencePublicPerKwh: 0.59,
     patterns: ['fastned'],
-    note: 'Tarif abonné Fastned Gold (~0,41 €/kWh)',
+    note: 'Tarif abonné Fastned Gold (~0,41 €/kWh · abo 11,99 €/mois)',
   },
 ];
 
@@ -368,18 +382,26 @@ function normSubText(text: string | null | undefined): string {
     .toLowerCase();
 }
 
+export function findAvailableSubscriptionsForStation(
+  brand: string | null | undefined,
+  operator: string | null | undefined
+): SubscriptionPlan[] {
+  const hay = `${normSubText(brand)} ${normSubText(operator)}`;
+  return SUBSCRIPTION_PLANS.filter((plan) =>
+    plan.patterns.some((p) => hay.includes(p))
+  ).sort((a, b) => a.pricePerKwh - b.pricePerKwh);
+}
+
 export function matchActiveSubscription(
   brand: string | null | undefined,
   operator: string | null | undefined,
   activeSubscriptionIds: string[]
 ): SubscriptionPlan | null {
   if (!activeSubscriptionIds.length) return null;
-  const hay = `${normSubText(brand)} ${normSubText(operator)}`;
   const activeSet = new Set(activeSubscriptionIds);
-  const matches = SUBSCRIPTION_PLANS.filter(
-    (plan) => activeSet.has(plan.id) && plan.patterns.some((p) => hay.includes(p))
-  ).sort((a, b) => a.pricePerKwh - b.pricePerKwh);
-
+  const matches = findAvailableSubscriptionsForStation(brand, operator).filter((plan) =>
+    activeSet.has(plan.id)
+  );
   return matches[0] || null;
 }
 

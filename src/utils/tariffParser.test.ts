@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  computeSubscriptionBreakeven,
   estimateChargeSession,
   estimateTotalCostWithDetour,
   getPriceTier,
@@ -7,7 +8,7 @@ import {
   normalizePowerKw,
   parseIrveTariff,
 } from './tariffParser';
-import { DEFAULT_VEHICLE_PROFILE } from '../data/networkTariffs';
+import { DEFAULT_VEHICLE_PROFILE, SUBSCRIPTION_PLANS } from '../data/networkTariffs';
 
 describe('isTruthyIrve', () => {
   it('normalizes mixed-case ODRÉ boolean strings and booleans', () => {
@@ -168,5 +169,32 @@ describe('estimateTotalCostWithDetour', () => {
     expect(farCheap.detourRoundTripKm).toBe(30);
     expect(nearGood.detourRoundTripKm).toBe(2);
     expect(nearGood.totalEffectiveEur!).toBeLessThan(farCheap.totalEffectiveEur!);
+  });
+});
+
+describe('computeSubscriptionBreakeven', () => {
+  it('computes exact break-even kWh, charges and km for Ionity, Mobilize and Electra', () => {
+    const ionity = SUBSCRIPTION_PLANS.find((p) => p.id === 'ionity')!;
+    const ionityRes = computeSubscriptionBreakeven(ionity, null, DEFAULT_VEHICLE_PROFILE);
+    // 11.99 / (0.59 - 0.33 = 0.26) = 46.115 -> 47 kWh ; 47 / 36 = 1.3 charges
+    expect(ionityRes.isProfitable).toBe(true);
+    expect(ionityRes.breakEvenKwh).toBe(47);
+    expect(ionityRes.breakEvenCharges).toBe(1.3);
+    expect(ionityRes.breakEvenKm).toBe(Math.round((47 / 16.5) * 100));
+
+    const mobilize = SUBSCRIPTION_PLANS.find((p) => p.id === 'mobilize')!;
+    const mobRes = computeSubscriptionBreakeven(mobilize, 0.59, DEFAULT_VEHICLE_PROFILE);
+    expect(mobRes.breakEvenKwh).toBe(25);
+
+    const electra = SUBSCRIPTION_PLANS.find((p) => p.id === 'electra')!;
+    const elecRes = computeSubscriptionBreakeven(electra, 0.54, DEFAULT_VEHICLE_PROFILE);
+    expect(elecRes.breakEvenKwh).toBe(80);
+  });
+
+  it('returns not profitable when public/OCPI rate is already <= subscription rate', () => {
+    const tesla = SUBSCRIPTION_PLANS.find((p) => p.id === 'tesla')!;
+    const res = computeSubscriptionBreakeven(tesla, 0.22, DEFAULT_VEHICLE_PROFILE);
+    expect(res.isProfitable).toBe(false);
+    expect(res.breakEvenKwh).toBeNull();
   });
 });

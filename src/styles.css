@@ -2641,3 +2641,105 @@ dialog::backdrop {
   background: rgba(139, 92, 246, 0.28);
   color: #ddd6fe;
 }
+
+.price-sub-fee {
+  margin-top: 0.18rem;
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: #ddd6fe;
+  opacity: 0.95;
+}
+
+.spec-chip.sub-chip {
+  background: rgba(139, 92, 246, 0.18);
+  border: 1px solid rgba(139, 92, 246, 0.42);
+  color: #ddd6fe;
+}
+
+.spec-chip.sub-hint-chip {
+  background: rgba(139, 92, 246, 0.1);
+  border: 1px dashed rgba(139, 92, 246, 0.38);
+  color: #c4b5fd;
+}
+
+.sub-plan-breakeven {
+  color: #34d399 !important;
+  font-weight: 700;
+  margin-top: 0.15rem;
+}
+
+.sub-breakeven-card {
+  border-color: rgba(139, 92, 246, 0.35);
+}
+
+.sub-detail-list,
+.sim-subs-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.sub-detail-row {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  padding: 0.65rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.sub-detail-row.is-active {
+  border-color: rgba(139, 92, 246, 0.6);
+  background: rgba(139, 92, 246, 0.12);
+}
+
+.sub-detail-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.sub-monthly-tag {
+  font-size: 0.76rem;
+  color: #c4b5fd;
+  font-weight: 700;
+}
+
+.sub-detail-toggle {
+  min-height: 34px;
+  padding: 0.25rem 0.7rem;
+  border-radius: 9px;
+  border: 1px solid rgba(139, 92, 246, 0.45);
+  background: rgba(139, 92, 246, 0.16);
+  color: #ddd6fe;
+  font-size: 0.76rem;
+  font-weight: 700;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.sub-detail-toggle.active {
+  background: var(--accent-purple);
+  border-color: var(--accent-purple);
+  color: #ffffff;
+}
+
+.sub-detail-rates {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+
+.sub-detail-rates strong:first-child {
+  color: var(--text-primary);
+}
+
+.sub-detail-breakeven {
+  font-size: 0.78rem;
+  color: #6ee7b7;
+}
+
+.sub-detail-breakeven strong {
+  color: #34d399;
+}

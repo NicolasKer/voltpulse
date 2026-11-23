@@ -10,10 +10,13 @@ import {
   RefreshCw,
   RotateCcw,
   Save,
+  Ticket,
   Zap,
 } from 'lucide-react';
+import { findAvailableSubscriptionsForStation } from '../data/networkTariffs';
 import { ChargingStation, UserPriceOverride, VehicleProfile } from '../types/charging';
 import {
+  computeSubscriptionBreakeven,
   estimateChargeSession,
   estimateTotalCostWithDetour,
   formatPriceKwh,
@@ -26,9 +29,11 @@ interface StationDetailModalProps {
   vehicle: VehicleProfile;
   areaAveragePrice: number | null;
   existingOverride?: UserPriceOverride;
+  activeSubscriptions: string[];
   isFavorite: boolean;
   onClose: () => void;
   onRefreshAvailability?: (station: ChargingStation) => Promise<void>;
+  onToggleSubscription: (planId: string) => void;
   onSaveOverride: (station: ChargingStation, pricePerKwh: number, note: string) => void;
   onDeleteOverride: (stationId: string) => void;
   onToggleFavorite: (station: ChargingStation) => void;
@@ -40,9 +45,11 @@ export const StationDetailModal: React.FC<StationDetailModalProps> = ({
   vehicle,
   areaAveragePrice,
   existingOverride,
+  activeSubscriptions,
   isFavorite,
   onClose,
   onRefreshAvailability,
+  onToggleSubscription,
   onSaveOverride,
   onDeleteOverride,
   onToggleFavorite,
@@ -306,6 +313,77 @@ export const StationDetailModal: React.FC<StationDetailModalProps> = ({
           </p>
         )}
       </section>
+
+      {/* Subscription & Break-Even Analysis */}
+      {(() => {
+        const availablePlans = findAvailableSubscriptionsForStation(
+          station.brand,
+          station.operator
+        );
+        if (availablePlans.length === 0) return null;
+        const publicBase =
+          resolvedPrice.source === 'subscription'
+            ? resolvedPrice.publicPricePerKwh ?? null
+            : resolvedPrice.pricePerKwh;
+        return (
+          <section className="detail-card-box sub-breakeven-card">
+            <h2 className="detail-subhead">
+              <Ticket size={15} aria-hidden="true" /> Abonnement &amp; seuil de rentabilité
+            </h2>
+            <div className="sub-detail-list">
+              {availablePlans.map((plan) => {
+                const isActive = activeSubscriptions.includes(plan.id);
+                const be = computeSubscriptionBreakeven(plan, publicBase, vehicle);
+                return (
+                  <div key={plan.id} className="sub-detail-row">
+                    <div className="sub-detail-head">
+                      <div>
+                        <strong>{plan.name}</strong>
+                        <span className="sub-monthly-tag"> · Abo {plan.monthlyLabel}</span>
+                      </div>
+                      <button
+                        type="button"
+                        className={`sub-detail-toggle${isActive ? ' active' : ''}`}
+                        aria-pressed={isActive}
+                        onClick={() => onToggleSubscription(plan.id)}
+                      >
+                        {isActive ? 'Actif ✓' : 'Activer'}
+                      </button>
+                    </div>
+                    <div className="sub-detail-rates">
+                      <strong>{formatPriceKwh(plan.pricePerKwh, true)}</strong> avec abo vs{' '}
+                      <span>{formatPriceKwh(be.baselinePublicPerKwh, true)}</span> sans abo
+                      {be.isProfitable && (
+                        <strong className="accent-emerald-txt">
+                          {' '}
+                          (-
+                          {be.savingsPerChargeEur.toLocaleString('fr-FR', {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}{' '}
+                          €/recharge)
+                        </strong>
+                      )}
+                    </div>
+                    <div className="sub-detail-breakeven">
+                      {be.isProfitable ? (
+                        <>
+                          Rentable dès <strong>{be.breakEvenKwh} kWh/mois</strong> (~
+                          {be.breakEvenCharges} recharge
+                          {(be.breakEvenCharges ?? 0) > 1 ? 's' : ''}
+                          {be.breakEvenKm ? ` · ~${be.breakEvenKm} km` : ''})
+                        </>
+                      ) : (
+                        <span>Déjà moins cher sans abonnement sur ce tarif.</span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        );
+      })()}
 
       {/* Power Tiers at Station */}
       {station.tiers.length > 0 && (
