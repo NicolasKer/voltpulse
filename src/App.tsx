@@ -6,6 +6,7 @@ import {
   Crosshair,
   List,
   Map as MapIcon,
+  QrCode,
   RefreshCw,
   Route,
   Search,
@@ -78,6 +79,7 @@ import { SimulatorView } from './components/SimulatorView';
 import { LogbookView } from './components/LogbookView';
 import { ChargeLogModal, ChargeLogPrefill } from './components/ChargeLogModal';
 import { SettingsModal } from './components/SettingsModal';
+import { ShareModal } from './components/ShareModal';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -143,6 +145,7 @@ export const App: React.FC = () => {
   // Modals & Selection
   const [selectedStationId, setSelectedStationId] = useState<string | null>(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
+  const [isShareOpen, setIsShareOpen] = useState<boolean>(false);
   const [logModalPrefill, setLogModalPrefill] = useState<ChargeLogPrefill | null>(null);
   const [isLogModalOpen, setIsLogModalOpen] = useState<boolean>(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -959,6 +962,15 @@ export const App: React.FC = () => {
           <button
             type="button"
             className="icon-ghost-btn"
+            onClick={() => setIsShareOpen(true)}
+            aria-label="Partager l’application par QR code"
+            title="Partager (QR code)"
+          >
+            <QrCode size={17} aria-hidden="true" />
+          </button>
+          <button
+            type="button"
+            className="icon-ghost-btn"
             onClick={() => setIsSettingsOpen(true)}
             aria-label="Paramètres et sources"
             title="Paramètres"
@@ -1621,12 +1633,22 @@ export const App: React.FC = () => {
         activeSubscriptions={activeSubscriptions}
         canInstallApp={canInstallApp}
         onInstallApp={handleInstallApp}
+        onOpenShare={() => {
+          setIsSettingsOpen(false);
+          setIsShareOpen(true);
+        }}
         onUpdateFilters={updateFilters}
         onUpdateVehicle={updateVehicle}
         onToggleSubscription={handleToggleSubscription}
         onExportJson={handleExportJson}
         onImportJson={handleImportJson}
         onResetAll={handleResetAll}
+      />
+
+      <ShareModal
+        isOpen={isShareOpen}
+        onClose={() => setIsShareOpen(false)}
+        onNotify={showToast}
       />
 
       {toastMessage && (

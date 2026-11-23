@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { Download, Info, Smartphone, Ticket, Trash2, Upload } from 'lucide-react';
+import { Download, Info, QrCode, Smartphone, Ticket, Trash2, Upload } from 'lucide-react';
 import { SUBSCRIPTION_PLANS } from '../data/networkTariffs';
 import { PowerMode, SearchFilters, VehicleProfile } from '../types/charging';
 import { computeSubscriptionBreakeven, formatPriceKwh } from '../utils/tariffParser';
@@ -13,6 +13,7 @@ interface SettingsModalProps {
   activeSubscriptions: string[];
   canInstallApp: boolean;
   onInstallApp: () => void;
+  onOpenShare: () => void;
   onUpdateFilters: (next: SearchFilters) => void;
   onUpdateVehicle: (next: VehicleProfile) => void;
   onToggleSubscription: (planId: string) => void;
@@ -29,6 +30,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   activeSubscriptions,
   canInstallApp,
   onInstallApp,
+  onOpenShare,
   onUpdateFilters,
   onUpdateVehicle,
   onToggleSubscription,
@@ -69,6 +71,29 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           </div>
         </div>
       )}
+
+      <div className="connection-status-card settings-share-card">
+        <div className="conn-row">
+          <QrCode size={20} className="conn-icon-ok" aria-hidden="true" />
+          <div>
+            <div className="conn-title">Partager VoltPulse</div>
+            <div className="conn-sub">
+              QR code prêt à scanner ou envoyer par message.
+            </div>
+          </div>
+        </div>
+        <div className="conn-actions-row">
+          <button
+            type="button"
+            className="secondary-btn"
+            style={{ width: '100%', justifyContent: 'center' }}
+            onClick={onOpenShare}
+          >
+            <QrCode size={15} aria-hidden="true" />
+            <span>Afficher le QR code</span>
+          </button>
+        </div>
+      </div>
 
       <div className="detail-card-box">
         <h2 className="detail-subhead">Préférences par défaut</h2>
